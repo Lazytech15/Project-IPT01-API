@@ -58,47 +58,50 @@
         </div>
         <button type="submit">Register</button>
     </form>
-
-    <!-- Import Firebase SDK with modular syntax -->
+    
     <script type="module">
-        // Import the functions you need from the SDKs you need
+        // Import the functions you need from the Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
+    
         // Your web app's Firebase configuration
         const firebaseConfig = {
-        apiKey: "AIzaSyCBowFGoC4DtkSqzOoEhTxzkdcx6JD4tW4",
-        authDomain: "attendance-record-1133c.firebaseapp.com",
-        projectId: "attendance-record-1133c",
-        storageBucket: "attendance-record-1133c.firebasestorage.app",
-        messagingSenderId: "484541514364",
-        appId: "1:484541514364:web:6547ec4cbee07f4c8abff9"
+            apiKey: "AIzaSyCBowFGoC4DtkSqzOoEhTxzkdcx6JD4tW4",
+            authDomain: "attendance-record-1133c.firebaseapp.com",
+            projectId: "attendance-record-1133c",
+            storageBucket: "attendance-record-1133c.firebasestorage.app",
+            messagingSenderId: "484541514364",
+            appId: "1:484541514364:web:6547ec4cbee07f4c8abff9"
         };
-
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-
+    
+        // Add event listener for the registration form submission
         document.getElementById('registrationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
+            e.preventDefault(); // Prevent the default form submission behavior
+    
+            // Collect student data from the form
             const studentData = {
                 studentId: document.getElementById('studentId').value,
                 name: document.getElementById('name').value,
                 course: document.getElementById('course').value,
                 year: document.getElementById('year').value,
-                registeredAt: new Date().toISOString()
+                registeredAt: new Date().toISOString() // Record the registration timestamp
             };
-
+    
             try {
+                // Save the student data to the Firebase Realtime Database
                 await set(ref(database, 'students/' + studentData.studentId), studentData);
-                alert('Registration successful!');
-                e.target.reset();
+                alert('Registration successful!'); // Show success message
+                e.target.reset(); // Reset the form
             } catch (error) {
                 console.error('Error:', error);
-                alert('Registration failed. Please try again.');
+                alert('Registration failed. Please try again.'); // Show error message
             }
         });
     </script>
+    
 </body>
 </html>

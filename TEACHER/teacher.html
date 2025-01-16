@@ -69,7 +69,6 @@
     </style>
 </head>
 <body>
-    <h1>Attendance System</h1>
     
     <!-- Login Form -->
     <div id="loginForm">
@@ -126,33 +125,34 @@
     </div>
 
     <script type="module">
+        // Import necessary Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getDatabase, ref, get, push, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     
         // Your web app's Firebase configuration
         const firebaseConfig = {
-        apiKey: "AIzaSyCBowFGoC4DtkSqzOoEhTxzkdcx6JD4tW4",
-        authDomain: "attendance-record-1133c.firebaseapp.com",
-        projectId: "attendance-record-1133c",
-        storageBucket: "attendance-record-1133c.firebasestorage.app",
-        messagingSenderId: "484541514364",
-        appId: "1:484541514364:web:6547ec4cbee07f4c8abff9"
+            apiKey: "AIzaSyCBowFGoC4DtkSqzOoEhTxzkdcx6JD4tW4",
+            authDomain: "attendance-record-1133c.firebaseapp.com",
+            projectId: "attendance-record-1133c",
+            storageBucket: "attendance-record-1133c.firebasestorage.app",
+            messagingSenderId: "484541514364",
+            appId: "1:484541514364:web:6547ec4cbee07f4c8abff9"
         };
     
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const auth = getAuth(app);
-
-                // Global auth token storage
-                let authToken = null;
-
-            // Make auth functions global
-            window.login = async function() {
+    
+        // Global auth token storage
+        let authToken = null;
+    
+        // Function to handle user login
+        window.login = async function() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-
+    
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
@@ -170,7 +170,8 @@
                 alert('Login failed. Please check your credentials.');
             }
         };
-
+    
+        // Function to handle user logout
         window.logout = async function() {
             try {
                 await signOut(auth);
@@ -183,9 +184,8 @@
                 console.error('Logout error:', error);
             }
         };
-
     
-        // Make functions global so they can be called from HTML
+        // Function to generate QR code
         window.generateQR = function() {
             const subject = document.getElementById('subject').value;
             const section = document.getElementById('section').value;
@@ -204,87 +204,89 @@
                 height: 256
             });
         };
-
-async function processStudentAttendance(studentId) {
-    console.log('Processing attendance for student ID:', studentId);
-    try {
-        // Fetch student data from your API
-        const response = await fetch(`${API_URL}/students/${studentId}`);
-        if (!response.ok) {
-            throw new Error('Student not found');
-        }
-
-        const studentData = await response.json();
-        console.log('Student data:', studentData);
-
-        const attendanceEntry = {
-            studentId: studentData.studentId,
-            name: studentData.name,
-            course: studentData.course,
-            timeIn: new Date().toLocaleTimeString(),
-            subject: document.getElementById('subject').value,
-            section: document.getElementById('section').value
-        };
-
-        // Save attendance through your API
-        const saveResponse = await fetch(`${API_URL}/attendance`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(attendanceEntry)
-        });
-
-        if (!saveResponse.ok) {
-            throw new Error('Failed to save attendance');
-        }
-
-        console.log('Attendance entry saved:', attendanceEntry);
-        attendanceData.push(attendanceEntry);
-        updateAttendanceTable();
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to process attendance. Please try again.');
-    }
-}
-
-function updateAttendanceTable() {
-    const tbody = document.getElementById('attendanceTable');
-    if (!tbody) {
-        console.error('Attendance table not found');
-        return;
-    }
     
-    tbody.innerHTML = attendanceData.map(entry => `
-        <tr>
-            <td>${entry.studentId}</td>
-            <td>${entry.name}</td>
-            <td>${entry.course}</td>
-            <td>${entry.timeIn}</td>
-        </tr>
-    `).join('');
-}
-
-// Load existing attendance data when page loads
-async function loadExistingAttendance() {
-    try {
-        const response = await fetch(`${API_URL}/attendance`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch attendance data');
-        }
-        
-        const data = await response.json();
-        attendanceData = Object.values(data);
-        updateAttendanceTable();
-    } catch (error) {
-        console.error('Error loading attendance data:', error);
-    }
-}
-
-// Call this when the page loads
-document.addEventListener('DOMContentLoaded', loadExistingAttendance);
+        // Function to process student attendance
+        async function processStudentAttendance(studentId) {
+            console.log('Processing attendance for student ID:', studentId);
+            try {
+                // Fetch student data from your API
+                const response = await fetch(`${API_URL}/students/${studentId}`);
+                if (!response.ok) {
+                    throw new Error('Student not found');
+                }
     
-        // Make scanner function global
+                const studentData = await response.json();
+                console.log('Student data:', studentData);
+    
+                const attendanceEntry = {
+                    studentId: studentData.studentId,
+                    name: studentData.name,
+                    course: studentData.course,
+                    timeIn: new Date().toLocaleTimeString(),
+                    subject: document.getElementById('subject').value,
+                    section: document.getElementById('section').value
+                };
+    
+                // Save attendance through your API
+                const saveResponse = await fetch(`${API_URL}/attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(attendanceEntry)
+                });
+    
+                if (!saveResponse.ok) {
+                    throw new Error('Failed to save attendance');
+                }
+    
+                console.log('Attendance entry saved:', attendanceEntry);
+                attendanceData.push(attendanceEntry);
+                updateAttendanceTable();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to process attendance. Please try again.');
+            }
+        }
+    
+        // Function to update the attendance table
+        function updateAttendanceTable() {
+            const tbody = document.getElementById('attendanceTable');
+            if (!tbody) {
+                console.error('Attendance table not found');
+                return;
+            }
+            
+            tbody.innerHTML = attendanceData.map(entry => `
+                <tr>
+                    <td>${entry.studentId}</td>
+                    <td>${entry.name}</td>
+                    <td>${entry.course}</td>
+                    <td>${entry.timeIn}</td>
+                </tr>
+            `).join('');
+        }
+    
+        // Function to load existing attendance data when the page loads
+        async function loadExistingAttendance() {
+            try {
+                const response = await fetch(`${API_URL}/attendance`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch attendance data');
+                }
+                
+                const data = await response.json();
+                attendanceData = Object.values(data);
+                updateAttendanceTable();
+            } catch (error) {
+                console.error('Error loading attendance data:', error);
+            }
+        }
+    
+        // Call this function when the page loads
+        document.addEventListener('DOMContentLoaded', loadExistingAttendance);
+    
+        // Function to start the mock scanner
         window.startScanner = function() {
             const mockStudentId = prompt('Enter Student ID (mock scanner):');
             if (mockStudentId) {
@@ -296,9 +298,9 @@ document.addEventListener('DOMContentLoaded', loadExistingAttendance);
         // Define API URL
         const API_URL = 'http://localhost:3000/api';
         let attendanceData = [];
-
-                // Initialize auth state listener
-                auth.onAuthStateChanged((user) => {
+    
+        // Initialize auth state listener
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('loginForm').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -308,6 +310,5 @@ document.addEventListener('DOMContentLoaded', loadExistingAttendance);
             }
         });
     </script>
-    
 </body>
 </html>
