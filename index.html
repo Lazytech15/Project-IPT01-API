@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Registration</title>
+    <title>Attendance System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,7 +19,7 @@
             display: block;
             margin-bottom: 5px;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -31,40 +32,104 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin: 5px;
         }
         button:hover {
             background-color: #45a049;
         }
+        #qrCode {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #attendanceList {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #loginForm {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <h1>Student Registration</h1>
-    <form id="registrationForm">
+    <h1>Attendance System</h1>
+    
+    <!-- Login Form -->
+    <div id="loginForm">
+        <h2>Teacher Login</h2>
         <div class="form-group">
-            <label for="studentId">Student ID</label>
-            <input type="text" id="studentId" required>
+            <label for="email">Email</label>
+            <input type="email" id="email" required>
         </div>
         <div class="form-group">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" required>
         </div>
-        <div class="form-group">
-            <label for="course">Course</label>
-            <input type="text" id="course" required>
-        </div>
-        <div class="form-group">
-            <label for="year">Year Level</label>
-            <input type="number" id="year" required>
-        </div>
-        <button type="submit">Register</button>
-    </form>
+        <button onclick="login()">Login</button>
+    </div>
 
-    <!-- Import Firebase SDK with modular syntax -->
+    <!-- Main Content (Hidden until login) -->
+    <div id="mainContent" class="hidden">
+        <h1>Attendance System</h1>
+        
+        <!-- Teacher Form -->
+        <div id="teacherForm">
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" required>
+            </div>
+            <div class="form-group">
+                <label for="section">Section</label>
+                <input type="text" id="section" required>
+            </div>
+            <button onclick="generateQR()">Generate QR Code</button>
+            <button onclick="startScanner()">Start Scanner</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <!-- QR Code Display -->
+        <div id="qrCode"></div>
+
+        <!-- Attendance List -->
+        <div id="attendanceList">
+            <h2>Attendance List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
+        import { getDatabase, ref, get, push, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    
         // Your web app's Firebase configuration
         const firebaseConfig = {
         apiKey: "AIzaSyCBowFGoC4DtkSqzOoEhTxzkdcx6JD4tW4",
@@ -74,31 +139,176 @@
         messagingSenderId: "484541514364",
         appId: "1:484541514364:web:6547ec4cbee07f4c8abff9"
         };
-
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
 
-        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+                // Global auth token storage
+                let authToken = null;
 
-            const studentData = {
-                studentId: document.getElementById('studentId').value,
-                name: document.getElementById('name').value,
-                course: document.getElementById('course').value,
-                year: document.getElementById('year').value,
-                registeredAt: new Date().toISOString()
-            };
+            // Make auth functions global
+            window.login = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
             try {
-                await set(ref(database, 'students/' + studentData.studentId), studentData);
-                alert('Registration successful!');
-                e.target.reset();
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                authToken = await user.getIdToken();
+                
+                // Show main content and hide login form
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                
+                // Initialize attendance data
+                attendanceData = [];
+                updateAttendanceTable();
             } catch (error) {
-                console.error('Error:', error);
-                alert('Registration failed. Please try again.');
+                console.error('Login error:', error);
+                alert('Login failed. Please check your credentials.');
+            }
+        };
+
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+                authToken = null;
+                
+                // Show login form and hide main content
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+
+    
+        // Make functions global so they can be called from HTML
+        window.generateQR = function() {
+            const subject = document.getElementById('subject').value;
+            const section = document.getElementById('section').value;
+            const qrData = JSON.stringify({ 
+                subject, 
+                section, 
+                timestamp: new Date().toISOString() 
+            });
+            
+            const qrCodeDiv = document.getElementById('qrCode');
+            qrCodeDiv.innerHTML = '';
+            
+            new QRCode(qrCodeDiv, {
+                text: qrData,
+                width: 256,
+                height: 256
+            });
+        };
+
+async function processStudentAttendance(studentId) {
+    console.log('Processing attendance for student ID:', studentId);
+    try {
+        // Fetch student data from your API
+        const response = await fetch(`${API_URL}/students/${studentId}`);
+        if (!response.ok) {
+            throw new Error('Student not found');
+        }
+
+        const studentData = await response.json();
+        console.log('Student data:', studentData);
+
+        const attendanceEntry = {
+            studentId: studentData.studentId,
+            name: studentData.name,
+            course: studentData.course,
+            timeIn: new Date().toLocaleTimeString(),
+            subject: document.getElementById('subject').value,
+            section: document.getElementById('section').value
+        };
+
+        // Save attendance through your API
+        const saveResponse = await fetch(`${API_URL}/attendance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(attendanceEntry)
+        });
+
+        if (!saveResponse.ok) {
+            throw new Error('Failed to save attendance');
+        }
+
+        console.log('Attendance entry saved:', attendanceEntry);
+        attendanceData.push(attendanceEntry);
+        updateAttendanceTable();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to process attendance. Please try again.');
+    }
+}
+
+function updateAttendanceTable() {
+    const tbody = document.getElementById('attendanceTable');
+    if (!tbody) {
+        console.error('Attendance table not found');
+        return;
+    }
+    
+    tbody.innerHTML = attendanceData.map(entry => `
+        <tr>
+            <td>${entry.studentId}</td>
+            <td>${entry.name}</td>
+            <td>${entry.course}</td>
+            <td>${entry.timeIn}</td>
+        </tr>
+    `).join('');
+}
+
+// Load existing attendance data when page loads
+async function loadExistingAttendance() {
+    try {
+        const response = await fetch(`${API_URL}/attendance`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch attendance data');
+        }
+        
+        const data = await response.json();
+        attendanceData = Object.values(data);
+        updateAttendanceTable();
+    } catch (error) {
+        console.error('Error loading attendance data:', error);
+    }
+}
+
+// Call this when the page loads
+document.addEventListener('DOMContentLoaded', loadExistingAttendance);
+    
+        // Make scanner function global
+        window.startScanner = function() {
+            const mockStudentId = prompt('Enter Student ID (mock scanner):');
+            if (mockStudentId) {
+                console.log('Mock scanner input:', mockStudentId);
+                processStudentAttendance(mockStudentId);
+            }
+        };
+    
+        // Define API URL
+        const API_URL = 'https://jovial-stroopwafel-5454a6.netlify.app/.netlify/functions/service';
+
+        let attendanceData = [];
+
+                // Initialize auth state listener
+                auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+            } else {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
             }
         });
     </script>
+    
 </body>
 </html>
