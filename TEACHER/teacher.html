@@ -5,68 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #qrCode {
-            margin-top: 20px;
-            text-align: center;
-        }
-        #attendanceList {
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        #loginForm {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="teacher.css">
 </head>
 <body>
     
@@ -115,7 +54,8 @@
                         <th>Student ID</th>
                         <th>Name</th>
                         <th>Course</th>
-                        <th>Time</th>
+                        <th>Section</th>
+                        <th>Time-in</th>
                     </tr>
                 </thead>
                 <tbody id="attendanceTable">
@@ -262,6 +202,7 @@
                     <td>${entry.studentId}</td>
                     <td>${entry.name}</td>
                     <td>${entry.course}</td>
+                    <td>${entry.section}</td>
                     <td>${entry.timeIn}</td>
                 </tr>
             `).join('');
